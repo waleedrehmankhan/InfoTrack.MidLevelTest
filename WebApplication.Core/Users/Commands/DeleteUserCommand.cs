@@ -34,7 +34,6 @@ namespace WebApplication.Core.Users.Commands
                 _mapper = mapper;
             }
 
-            /// <inheritdoc />
             public async Task<UserDto> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
             {
                 User? deletedUser = await _userService.DeleteAsync(request.Id, cancellationToken);

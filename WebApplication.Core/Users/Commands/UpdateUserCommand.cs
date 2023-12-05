@@ -1,10 +1,11 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
 using MediatR;
+using WebApplication.Core.Common.Exceptions;
 using WebApplication.Core.Users.Common.Models;
+using WebApplication.Infrastructure.Entities;
 using WebApplication.Infrastructure.Interfaces;
 
 namespace WebApplication.Core.Users.Commands
@@ -21,17 +22,51 @@ namespace WebApplication.Core.Users.Commands
         {
             public Validator()
             {
-                // TODO: Create validation rules for UpdateUserCommand so that all properties are required.
-                // If you are feeling ambitious, also create a validation rule that ensures the user exists in the database.
+                RuleFor(x => x.Id)
+                    .GreaterThan(0)
+                    .WithMessage("'Id' must be greater than '0'.");
+
+                RuleFor(x => x.GivenNames)
+                    .NotEmpty()
+                    .WithMessage("'Given Names' must not be empty.");
+
+
+                RuleFor(x => x.LastName)
+                    .NotEmpty()
+                    .WithMessage("'Last Name' must not be empty.");
+
+                RuleFor(x => x.EmailAddress)
+                    .NotEmpty()
+                    .WithMessage("'Email Address' must not be empty.");
+
+                RuleFor(x => x.MobileNumber)
+                    .NotEmpty()
+                    .WithMessage("'Mobile Number' must not be empty.");
             }
         }
 
         public class Handler : IRequestHandler<UpdateUserCommand, UserDto>
         {
-            /// <inheritdoc />
+            private readonly IUserService _userService;
+            private readonly IMapper _mapper;
+
+            public Handler(IUserService userService, IMapper mapper)
+            {
+                _userService = userService;
+                _mapper = mapper;
+            }
+
             public async Task<UserDto> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
             {
-                throw new NotImplementedException("Implement a way to update the user associated with the provided Id.");
+                User userToUpdate = _mapper.Map<User>(request);
+                
+                User? updatedUser = await _userService.UpdateAsync(userToUpdate, cancellationToken);
+                if (updatedUser == null)
+                {
+                    throw new NotFoundException($"The user '{request.Id}' could not be found.");
+                }
+
+                return _mapper.Map<UserDto>(updatedUser);
             }
         }
     }

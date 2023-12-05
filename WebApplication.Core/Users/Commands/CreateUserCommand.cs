@@ -45,19 +45,9 @@ namespace WebApplication.Core.Users.Commands
                 _mapper = mapper;
             }
 
-            /// <inheritdoc />
             public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
             {
-                User user = new User
-                {
-                    GivenNames = request.GivenNames,
-                    LastName = request.LastName,
-                    ContactDetail = new ContactDetail
-                    {
-                        EmailAddress = request.EmailAddress,
-                        MobileNumber = request.MobileNumber
-                    }
-                };
+                User user = _mapper.Map<User>(request);
 
                 User addedUser = await _userService.AddAsync(user, cancellationToken);
                 UserDto result = _mapper.Map<UserDto>(addedUser);

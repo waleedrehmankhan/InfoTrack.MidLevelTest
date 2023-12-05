@@ -41,7 +41,6 @@ namespace WebApplication.Core.Users.Queries
                 _mapper = mapper;
             }
 
-            /// <inheritdoc />
             public async Task<IEnumerable<UserDto>> Handle(FindUsersQuery request, CancellationToken cancellationToken)
             {
                 IEnumerable<User> users = await _userService.FindAsync(request.GivenNames, request.LastName, cancellationToken);

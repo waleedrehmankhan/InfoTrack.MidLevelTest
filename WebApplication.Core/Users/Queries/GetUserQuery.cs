@@ -34,7 +34,6 @@ namespace WebApplication.Core.Users.Queries
                 _mapper = mapper;
             }
 
-            /// <inheritdoc />
             public async Task<UserDto> Handle(GetUserQuery request, CancellationToken cancellationToken)
             {
                 User? user = await _userService.GetAsync(request.Id, cancellationToken);

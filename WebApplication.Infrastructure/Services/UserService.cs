@@ -69,7 +69,7 @@ namespace WebApplication.Infrastructure.Services
             {
                 if (_log.IsErrorEnabled)
                 {
-                    _log.Error($"Failed to retrieve Users with Names: {givenNames} {lastName}", ex);
+                    _log.Error($"Failed to retrieve Users with Name: {givenNames} {lastName}", ex);
                 }
 
                 throw;

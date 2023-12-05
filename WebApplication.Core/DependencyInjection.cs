@@ -19,7 +19,14 @@ namespace WebApplication.Core
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddMediatR(new[] { typeof(DependencyInjection).Assembly }, cfg => cfg.AsScoped());
             services.AddAutoMapper(typeof(DependencyInjection).Assembly);
-            services.AddInfrastructureServices();
+            if (env.IsDevelopment())
+            {
+                services.ConfigureDevelopmentServices();
+            }
+            else
+            {
+                services.ConfigureServices();
+            }
 
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(RequestValidationBehaviour<,>));
 
