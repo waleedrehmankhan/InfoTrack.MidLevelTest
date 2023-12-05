@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Common.Exceptions;
 using WebApplication.Core.Common.Models;
 using WebApplication.Core.Users.Common.Models;
+using WebApplication.Infrastructure.Entities;
 using WebApplication.Infrastructure.Interfaces;
 
 namespace WebApplication.Core.Users.Queries
@@ -31,6 +34,7 @@ namespace WebApplication.Core.Users.Queries
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(ListUsersQuery));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -40,20 +44,33 @@ namespace WebApplication.Core.Users.Queries
 
             public async Task<PaginatedDto<IEnumerable<UserDto>>> Handle(ListUsersQuery request, CancellationToken cancellationToken)
             {
-                var paginatedUsers = await _userService.GetPaginatedAsync(request.PageNumber, request.ItemsPerPage, cancellationToken);
-                if (paginatedUsers == null || !paginatedUsers.Any())
+                var stopwatch = Stopwatch.StartNew();
+
+                try
                 {
-                    throw new NotFoundException($"No users found.");
+                    IEnumerable<User> paginatedUsers = await _userService.GetPaginatedAsync(request.PageNumber, request.ItemsPerPage, cancellationToken);
+                    if (paginatedUsers == null || !paginatedUsers.Any())
+                    {
+                        throw new NotFoundException($"No users found.");
+                    }
+
+                    IEnumerable<UserDto> userDtos = _mapper.Map<IEnumerable<UserDto>>(paginatedUsers);
+                    bool hasNextPage = (request.PageNumber * request.ItemsPerPage) == paginatedUsers.Count();
+
+                    return new PaginatedDto<IEnumerable<UserDto>>
+                    {
+                        Data = userDtos,
+                        HasNextPage = hasNextPage
+                    };
                 }
-
-                var userDtos = _mapper.Map<IEnumerable<UserDto>>(paginatedUsers);
-                var hasNextPage = (request.PageNumber * request.ItemsPerPage) == paginatedUsers.Count();
-
-                return new PaginatedDto<IEnumerable<UserDto>>
+                finally
                 {
-                    Data = userDtos,
-                    HasNextPage = hasNextPage
-                };
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(ListUsersQuery)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }

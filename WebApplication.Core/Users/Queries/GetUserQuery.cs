@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Common.Exceptions;
 using WebApplication.Core.Users.Common.Models;
@@ -27,6 +29,7 @@ namespace WebApplication.Core.Users.Queries
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(GetUserQuery));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -36,13 +39,26 @@ namespace WebApplication.Core.Users.Queries
 
             public async Task<UserDto> Handle(GetUserQuery request, CancellationToken cancellationToken)
             {
-                User? user = await _userService.GetAsync(request.Id, cancellationToken);
+                var stopwatch = Stopwatch.StartNew();
 
-                if (user is default(User)) throw new NotFoundException($"The user '{request.Id}' could not be found.");
+                try
+                {
+                    User? user = await _userService.GetAsync(request.Id, cancellationToken);
 
-                UserDto result = _mapper.Map<UserDto>(user);
+                    if (user is default(User)) throw new NotFoundException($"The user '{request.Id}' could not be found.");
 
-                return result;
+                    UserDto result = _mapper.Map<UserDto>(user);
+
+                    return result;
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(GetUserQuery)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }

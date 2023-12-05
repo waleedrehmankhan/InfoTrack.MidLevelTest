@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Common.Exceptions;
 using WebApplication.Core.Users.Common.Models;
@@ -49,6 +51,7 @@ namespace WebApplication.Core.Users.Commands
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(UpdateUserCommand));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -58,15 +61,38 @@ namespace WebApplication.Core.Users.Commands
 
             public async Task<UserDto> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
             {
-                User userToUpdate = _mapper.Map<User>(request);
-                
-                User? updatedUser = await _userService.UpdateAsync(userToUpdate, cancellationToken);
-                if (updatedUser == null)
-                {
-                    throw new NotFoundException($"The user '{request.Id}' could not be found.");
-                }
+                var stopwatch = Stopwatch.StartNew();
 
-                return _mapper.Map<UserDto>(updatedUser);
+                try
+                {
+                    User userToUpdate = new User
+                    {
+                        Id = request.Id,
+                        GivenNames = request.GivenNames,
+                        LastName = request.LastName,
+                        ContactDetail = new ContactDetail
+                        {
+                            EmailAddress = request.EmailAddress,
+                            MobileNumber = request.MobileNumber
+                        }
+                    };
+
+                    User? updatedUser = await _userService.UpdateAsync(userToUpdate, cancellationToken);
+                    if (updatedUser == null)
+                    {
+                        throw new NotFoundException($"The user '{request.Id}' could not be found.");
+                    }
+
+                    return _mapper.Map<UserDto>(updatedUser);
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(UpdateUserCommand)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }

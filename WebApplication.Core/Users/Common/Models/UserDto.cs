@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using WebApplication.Core.Common.Interfaces;
+using WebApplication.Core.Users.Commands;
 using WebApplication.Infrastructure.Entities;
 
 namespace WebApplication.Core.Users.Common.Models
@@ -14,7 +15,6 @@ namespace WebApplication.Core.Users.Common.Models
 
         public string FullName => ToString();
 
-        /// <inheritdoc />
         public void Mapping(Profile profile)
         {
             profile.CreateMap<User, UserDto>()
@@ -29,7 +29,6 @@ namespace WebApplication.Core.Users.Common.Models
                    );
         }
 
-        /// <inheritdoc />
         public override string ToString()
         {
             return $"{GivenNames} {LastName}";

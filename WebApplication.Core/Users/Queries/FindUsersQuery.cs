@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Users.Common.Models;
 using WebApplication.Infrastructure.Entities;
@@ -34,6 +36,7 @@ namespace WebApplication.Core.Users.Queries
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(FindUsersQuery));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -43,8 +46,21 @@ namespace WebApplication.Core.Users.Queries
 
             public async Task<IEnumerable<UserDto>> Handle(FindUsersQuery request, CancellationToken cancellationToken)
             {
-                IEnumerable<User> users = await _userService.FindAsync(request.GivenNames, request.LastName, cancellationToken);
-                return users.Select(user => _mapper.Map<UserDto>(user));
+                var stopwatch = Stopwatch.StartNew();
+
+                try
+                {
+                    IEnumerable<User> users = await _userService.FindAsync(request.GivenNames, request.LastName, cancellationToken);
+                    return users.Select(user => _mapper.Map<UserDto>(user));
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(FindUsersQuery)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Users.Common.Models;
 using WebApplication.Infrastructure.Entities;
@@ -38,6 +40,7 @@ namespace WebApplication.Core.Users.Commands
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(CreateUserCommand));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -47,12 +50,34 @@ namespace WebApplication.Core.Users.Commands
 
             public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
             {
-                User user = _mapper.Map<User>(request);
+                var stopwatch = Stopwatch.StartNew();
 
-                User addedUser = await _userService.AddAsync(user, cancellationToken);
-                UserDto result = _mapper.Map<UserDto>(addedUser);
+                try
+                {
+                    User userToAdd = new User
+                    {
+                        GivenNames = request.GivenNames,
+                        LastName = request.LastName,
+                        ContactDetail = new ContactDetail
+                        {
+                            EmailAddress = request.EmailAddress,
+                            MobileNumber = request.MobileNumber
+                        }
+                    };
 
-                return result;
+                    User addedUser = await _userService.AddAsync(userToAdd, cancellationToken);
+                    UserDto result = _mapper.Map<UserDto>(addedUser);
+
+                    return result;
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(CreateUserCommand)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }

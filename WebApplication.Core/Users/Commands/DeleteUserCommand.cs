@@ -1,7 +1,9 @@
-﻿using System.Threading;
+﻿using System.Diagnostics;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoMapper;
 using FluentValidation;
+using log4net;
 using MediatR;
 using WebApplication.Core.Common.Exceptions;
 using WebApplication.Core.Users.Common.Models;
@@ -27,6 +29,7 @@ namespace WebApplication.Core.Users.Commands
         {
             private readonly IUserService _userService;
             private readonly IMapper _mapper;
+            private static readonly ILog _log = LogManager.GetLogger(typeof(DeleteUserCommand));
 
             public Handler(IUserService userService, IMapper mapper)
             {
@@ -36,11 +39,24 @@ namespace WebApplication.Core.Users.Commands
 
             public async Task<UserDto> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
             {
-                User? deletedUser = await _userService.DeleteAsync(request.Id, cancellationToken);
+                var stopwatch = Stopwatch.StartNew();
 
-                if (deletedUser is default(User)) throw new NotFoundException($"The user '{request.Id}' could not be found.");
+                try
+                {
+                    User? deletedUser = await _userService.DeleteAsync(request.Id, cancellationToken);
 
-                return _mapper.Map<UserDto>(deletedUser);
+                    if (deletedUser is default(User)) throw new NotFoundException($"The user '{request.Id}' could not be found.");
+
+                    return _mapper.Map<UserDto>(deletedUser);
+                }
+                finally
+                {
+                    stopwatch.Stop();
+                    if (_log.IsInfoEnabled)
+                    {
+                        _log.Info($"{nameof(DeleteUserCommand)} Handler execution time: {stopwatch.Elapsed.TotalMilliseconds} ms");
+                    }
+                }
             }
         }
     }
