@@ -47,7 +47,7 @@ namespace WebApplication.Infrastructure.Interfaces
         /// <param name="user">The user to update.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The updated user.</returns>
-        Task<User> UpdateAsync(User user, CancellationToken cancellationToken = default);
+        Task<User?> UpdateAsync(User user, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes an existing user in the database.
