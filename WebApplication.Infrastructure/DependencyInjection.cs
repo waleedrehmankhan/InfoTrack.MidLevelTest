@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System.Configuration;
 using WebApplication.Infrastructure.Contexts;
 using WebApplication.Infrastructure.Interfaces;
 using WebApplication.Infrastructure.Services;
@@ -11,16 +10,21 @@ namespace WebApplication.Infrastructure
         public static IServiceCollection ConfigureServices(this IServiceCollection services)
         {
             // SQL OR SQL Lite can be configured depending upon the scenario.
-            services.AddScoped<IUserService, UserService>();
+            services.AddDbContext<DataContext>();
+            ConfigureCommonServices(services);
             return services;
         }
 
         public static IServiceCollection ConfigureDevelopmentServices(this IServiceCollection services)
         {
             services.AddDbContext<InMemoryContext>();
-
-            services.AddScoped<IUserService, UserService>();
+            ConfigureCommonServices(services);
             return services;
+        }
+
+        private static void ConfigureCommonServices(IServiceCollection services)
+        {
+            services.AddScoped<IUserService, UserService>();
         }
     }
 }
